@@ -1,0 +1,6 @@
+
+OPENAI_CONF = dict(
+    OPENAI_API_KEY="",
+    OPENAI_API_BASE="http://10.19.53.220:9501/api/v1/856e6fce9c2a9f2a",
+    GPT_MODEL="gpt-4o",  # "gpt-4-1106-preview",
+)

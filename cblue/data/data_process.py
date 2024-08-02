@@ -11,9 +11,9 @@ from cblue.utils import load_json, load_dict, write_dict, str_q2b
 class EEDataProcessor(object):
     def __init__(self, root, is_lower=True, no_entity_label='O'):
         self.task_data_dir = os.path.join(root, 'CMeEE')
-        self.train_path = os.path.join(self.task_data_dir, 'CMeEE_train.json')
-        self.dev_path = os.path.join(self.task_data_dir, 'CMeEE_dev.json')
-        self.test_path = os.path.join(self.task_data_dir, 'CMeEE_test.json')
+        self.train_path = os.path.join(self.task_data_dir, 'CMeEE-V2_train.json')
+        self.dev_path = os.path.join(self.task_data_dir, 'CMeEE-V2_dev.json')
+        self.test_path = os.path.join(self.task_data_dir, 'CMeEE-V2_test.json')
 
         self.label_map_cache_path = os.path.join(self.task_data_dir, 'CMeEE_label_map.dict')
         self.label2id = None
@@ -54,8 +54,9 @@ class EEDataProcessor(object):
     def _pre_process(self, path, is_predict):
         def label_data(data, start, end, _type):
             """label_data"""
-            for i in range(start, end + 1):
+            for i in range(start, end): #@sting end + 1
                 suffix = "B-" if i == start else "I-"
+                # print(f"@sting {len(data)} {start} {i}")
                 data[i] = "{}{}".format(suffix, _type)
             return data
 
@@ -72,6 +73,7 @@ class EEDataProcessor(object):
             outputs['text'].append(text_a)
             outputs['orig_text'].append(data['text'])
             if not is_predict:
+                # print(f"@sting {path} {data['text']}")
                 labels = [self.no_entity_label] * len(text_a)
                 for entity in data['entities']:
                     start_idx, end_idx, type = entity['start_idx'], entity['end_idx'], entity['type']
@@ -128,9 +130,9 @@ class EEDataProcessor(object):
 class REDataProcessor(object):
     def __init__(self, root):
         self.task_data_dir = os.path.join(root, 'CMeIE')
-        self.train_path = os.path.join(self.task_data_dir, 'CMeIE_train.json')
-        self.dev_path = os.path.join(self.task_data_dir, 'CMeIE_dev.json')
-        self.test_path = os.path.join(self.task_data_dir, 'CMeIE_test.json')
+        self.train_path = os.path.join(self.task_data_dir, 'CMeIE-V2_train.jsonl')
+        self.dev_path = os.path.join(self.task_data_dir, 'CMeIE-V2_dev.jsonl')
+        self.test_path = os.path.join(self.task_data_dir, 'CMeIE-V2_test.jsonl')
 
         self.schema_path = os.path.join(self.task_data_dir, '53_schemas.json')
         self.pre_sub_obj = None
@@ -199,13 +201,16 @@ class REDataProcessor(object):
 
     def _load_schema(self, ):
         with open(self.schema_path, 'r', encoding='utf8') as f:
-            lines = f.readlines()
+            fobj = json.load(f)
             predicate_list = ["无关系"]
             s_entity = []
             o_entity = []
             pre_sub_obj = {}
-            for line in lines:
-                data = json.loads(line)
+            for data in fobj:
+            # lines = f.readlines()
+            # for line in lines:
+                # print(f"@sting {line}")
+                # data = json.loads(line)
                 if data['subject_type'] not in s_entity:
                     s_entity.append(data['subject_type'])
                 if data['object_type'] not in o_entity:
@@ -267,9 +272,9 @@ class REDataProcessor(object):
 class ERDataProcessor(object):
     def __init__(self, root):
         self.task_data_dir = os.path.join(root, 'CMeIE')
-        self.train_path = os.path.join(self.task_data_dir, 'CMeIE_train.json')
-        self.dev_path = os.path.join(self.task_data_dir, 'CMeIE_dev.json')
-        self.test_path = os.path.join(self.task_data_dir, 'CMeIE_test.json')
+        self.train_path = os.path.join(self.task_data_dir, 'CMeIE-V2_train.jsonl')
+        self.dev_path = os.path.join(self.task_data_dir, 'CMeIE-V2_dev.jsonl')
+        self.test_path = os.path.join(self.task_data_dir, 'CMeIE-V2_test.jsonl')
 
     def get_train_sample(self):
         return self._pre_process(self.train_path, is_predict=False)

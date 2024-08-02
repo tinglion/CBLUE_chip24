@@ -1,0 +1,9 @@
+openai
+# numpy
+scikit-learn
+pandas
+boto3
+jieba
+gensim
+# pytorch
+transformers #==4.5.1 

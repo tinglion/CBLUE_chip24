@@ -1418,15 +1418,15 @@ class ERTrainer(Trainer):
                                                                                                attention_mask)
 
             active_index = attention_mask.view(-1) == 1
-            sub_start_preds.extend((sub_start_logits.detach().view(-1) >= 0.5).cpu().long()[active_index])
-            sub_end_preds.extend((sub_end_logits.detach().view(-1) >= 0.5).cpu().long()[active_index])
-            obj_start_preds.extend((obj_start_logits.detach().view(-1) >= 0.5).cpu().long()[active_index])
-            obj_end_preds.extend((obj_end_logits.detach().view(-1) >= 0.5).cpu()[active_index])
+            sub_start_preds.extend((sub_start_logits.detach().view(-1) >= 0.5).cpu().long()[active_index.cpu()])
+            sub_end_preds.extend((sub_end_logits.detach().view(-1) >= 0.5).cpu().long()[active_index.cpu()])
+            obj_start_preds.extend((obj_start_logits.detach().view(-1) >= 0.5).cpu().long()[active_index.cpu()])
+            obj_end_preds.extend((obj_end_logits.detach().view(-1) >= 0.5).cpu()[active_index.cpu()])
 
-            sub_start_trues.extend(sub_start_label.detach().cpu().view(-1)[active_index].tolist())
-            sub_end_trues.extend(sub_end_label.detach().cpu().view(-1)[active_index].tolist())
-            obj_start_trues.extend(obj_start_label.detach().cpu().view(-1)[active_index].tolist())
-            obj_end_trues.extend(obj_end_label.detach().cpu().view(-1)[active_index].tolist())
+            sub_start_trues.extend(sub_start_label.detach().cpu().view(-1)[active_index.cpu()].tolist())
+            sub_end_trues.extend(sub_end_label.detach().cpu().view(-1)[active_index.cpu()].tolist())
+            obj_start_trues.extend(obj_start_label.detach().cpu().view(-1)[active_index.cpu()].tolist())
+            obj_end_trues.extend(obj_end_label.detach().cpu().view(-1)[active_index.cpu()].tolist())
 
         s_start_p, s_start_r, s_start_f1, _ = er_metric(sub_start_preds, sub_start_trues)
         s_end_p, s_end_r, s_end_f1, _ = er_metric(sub_end_preds, sub_end_trues)

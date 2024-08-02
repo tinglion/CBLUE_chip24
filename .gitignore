@@ -12,3 +12,11 @@ CBLUEDatasets/KUAKE-QIC/
 CBLUEDatasets/KUAKE-QQR/
 CBLUEDatasets/KUAKE-QTR/
 
+# custom
+conf.py
+logs/*
+temp/*
+data/output
+data/result_output
+data/chip2024
+data/*.tgz

@@ -150,6 +150,11 @@ def main():
 
         model = model_class.from_pretrained(os.path.join(args.model_dir, args.model_name),
                                             num_labels=data_processor.num_labels)
+                                            
+        # 遍历模型的所有参数并确保它们是连续的
+        for param in model.parameters():
+            if not param.is_contiguous():
+                param.data = param.contiguous()
 
         trainer = trainer_class(args=args, model=model, data_processor=data_processor,
                                 tokenizer=tokenizer, train_dataset=train_dataset, eval_dataset=eval_dataset,

@@ -41,6 +41,7 @@ class EEDataset(Dataset):
                                                              return_tensors=True)
         else:
             inputs = self.tokenizer.encode_plus(text, max_length=self.max_length, padding='max_length', truncation=True)
+        # print(f"@sting __getitem__={inputs}")
         if self.mode != "test":
             label = [self.data_processor.label2id[label_] for label_ in
                      self.labels[idx].split('\002')]  # find index from label list
@@ -52,8 +53,9 @@ class EEDataset(Dataset):
                        inputs['ngram_attention_mask'], inputs['ngram_token_type_ids'], \
                        inputs['ngram_position_matrix']
             else:
+                # @sting
                 return np.array(inputs['input_ids']), np.array(inputs['token_type_ids']), \
-                    np.array(inputs['attention_mask']), np.array(label)
+                    np.array(inputs['attention_mask']), torch.tensor(np.array(label), dtype=torch.long)
         else:
             if self.model_type == 'zen':
                 return inputs['input_ids'], inputs['token_type_ids'], \

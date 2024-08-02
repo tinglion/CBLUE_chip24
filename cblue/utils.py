@@ -9,7 +9,7 @@ import unicodedata, re
 
 
 def load_json(input_file):
-    with open(input_file, 'r') as f:
+    with open(input_file, 'r', encoding="utf8") as f:
         samples = json.load(f)
     return samples
 
