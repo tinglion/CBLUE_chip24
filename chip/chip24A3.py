@@ -7,7 +7,7 @@ import traceback
 
 sys.path.append(".")
 from chip import data_loader
-from utils import ee_wrapper, file_utils, openai_wrapper
+from utils import ee_wrapper, file_utils, json_utils, qwen_wrapper
 
 logger = logging.getLogger(__name__)
 
@@ -16,10 +16,9 @@ data_path = (
     if platform.system() == "Windows"
     else "/mnt/windows/sting/data/CHIP2004"
 )
-# TODO 不包括体温等指标型数据，finetune（EE，本地模型），补充数据和行业知识 
 
-# 1 临床表现信息（实体） 
-template_prompt1 = """您是一位中医学专家，请根据下面这段文字提取主要的临床表现信息（包括症状描述），用json格式返回。
+# 1 临床表现信息（实体）
+template_prompt1 = """您是一位中医学专家，请根据下面这段文字提取主要的临床表现信息（包括症状描述，不包括体温等指标型数据），用json格式返回。
 注意严格保留原文。
 病情描述：{raw_text}
 严格按照输出json格式：{"临床表现信息": {sugguest1}}
@@ -34,7 +33,7 @@ template_prompt2 = """您是一位中医学专家，请针对每条临床表现�
 """
 
 # 3 证候
-template_prompt3 = """您是一位中医学专家，请针对每条病机信息，结合病情描述，从证候候选项中选择最相关的一条记录标签，并根据相关性和重要性打分，分值范围0、1、2或者3，分值越高重要性越高，严格按照json格式输出。
+template_prompt3 = """您是一位中医学专家，请针对每条病机信息，结合病情描述，从证候候选项中选择最相关的一条记录标签，并根据相关性和重要性打分，分值范围0、1、2或者3，分值越高重要性越高，严格按照json格式输出(```json)。
 病机信息：{result2}
 病情描述：{raw_text}
 证候候选项：{candidate3}
@@ -135,9 +134,9 @@ def predict(fn, fn_dst=None, i_from=0, i_to=sys.maxsize):
                 ),
             )
             print(f"prompt1={prompt1}")
-            response1 = openai_wrapper.chat_complete(prompt1)
+            response1 = qwen_wrapper.chat_complete(prompt1)
             # print(f"response={response1}")
-            response1_obj = openai_wrapper.cvt_str_to_obj(response1)
+            response1_obj = json_utils.cvt_str_to_obj(response1)
             result1 = response1_obj.get("临床表现信息", [])
             print(f"result1={result1}")
 
@@ -152,8 +151,8 @@ def predict(fn, fn_dst=None, i_from=0, i_to=sys.maxsize):
                 .replace("{example2}", json.dumps(example2, ensure_ascii=False))
             )
             print(f"promp2={prompt2}")
-            response2 = openai_wrapper.chat_complete(prompt2)
-            response2_obj = openai_wrapper.cvt_str_to_obj(response2)
+            response2 = qwen_wrapper.chat_complete(prompt2)
+            response2_obj = json_utils.cvt_str_to_obj(response2)
             result2_scored = data_loader.rank(response2_obj)
             result2_full = [
                 (r2[0], r2[1], candidate2_map[r2[0]]) for r2 in result2_scored
@@ -175,8 +174,8 @@ def predict(fn, fn_dst=None, i_from=0, i_to=sys.maxsize):
                 .replace("{sugguest3}", json.dumps(sugguest3, ensure_ascii=False))
             )
             print(f"promp3={prompt3}")
-            response3 = openai_wrapper.chat_complete(prompt3)
-            response3_obj = openai_wrapper.cvt_str_to_obj(response3)
+            response3 = qwen_wrapper.chat_complete(prompt3)
+            response3_obj = json_utils.cvt_str_to_obj(response3)
             result3_scored = data_loader.rank(response3_obj)
             result3_full = [
                 (r3[0], r3[1], candidate3_map[r3[0]])
@@ -197,9 +196,9 @@ def predict(fn, fn_dst=None, i_from=0, i_to=sys.maxsize):
                 .replace("{result3}", ";".join(result3_name))
             )
             print(f"prompt4={prompt4}")
-            response4 = openai_wrapper.chat_complete(prompt4)
+            response4 = qwen_wrapper.chat_complete(prompt4)
             print(f"response4={response4}")
-            response4_obj = openai_wrapper.cvt_str_to_obj(response4)
+            response4_obj = json_utils.cvt_str_to_obj(response4)
             result4 = "临证体会：%s。辨证：%s" % (
                 response4_obj.get("临证体会", ""),
                 response4_obj.get("辨证", ""),
@@ -222,6 +221,7 @@ def predict(fn, fn_dst=None, i_from=0, i_to=sys.maxsize):
             print(f"ERROR name={name} i={i}")
             logger.error(e)
             traceback.print_exc()
+            result_lines.append("")
     if fn_dst:
         with open(fn_dst, "w", encoding="utf8") as fpr:
             for line in result_lines:
@@ -252,9 +252,9 @@ if __name__ == "__main__":
 
     predict(
         f"{data_path}/round2_A榜_data/A榜.json",
-        # fn_dst="./temp/NE_A_2.txt",
-        i_from=37,
-        i_to=38,
+        fn_dst="./temp/NE_A_3.txt",
+        i_from=17,
+        i_to=18,
     )
     # predict(
     #     f"{data_path}/round1_traning_data/train.json",

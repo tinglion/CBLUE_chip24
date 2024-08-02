@@ -6,4 +6,6 @@ boto3
 jieba
 gensim
 # pytorch
-transformers #==4.5.1 
+transformers #==4.5.1
+# qwen 
+dashscope

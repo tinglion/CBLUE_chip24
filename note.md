@@ -16,6 +16,8 @@ python ./baselines/run_classifier.py \
  --do_train --max_length=128 --train_batch_size=16 --eval_batch_size=16 --learning_rate=3e-5 --epochs=5 --warmup_proportion=0.1 --earlystop_patience=100 --max_grad_norm=0.0 --logging_steps=10 --save_steps=10 --seed=2021
 ```
 
+### 3 qwen only
+
 ## track
 
 * CMeEE: 实体提取
