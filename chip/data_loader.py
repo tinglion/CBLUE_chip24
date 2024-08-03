@@ -40,11 +40,13 @@ def load(fn):
 
 def parse_candidate(candidate: str):
     l = {}
+    l2 = {}
     segs = candidate.split(";")
     for seg in segs:
         words = seg.split(":")
         l[words[0]] = words[1]
-    return l
+        l[words[1]] = words[0]
+    return l, l2
 
 
 # [
@@ -75,7 +77,7 @@ def get_top(response_obj, top=3):
 
 
 # [{'name':['tag',score]}]
-def rank(data):
+def rank(data, min_number=3):
     if len(data) < 1:
         return []
     rlist = {}
@@ -90,10 +92,14 @@ def rank(data):
     total_sum = sum(rlist.values())
     sorted_items = sorted(rlist.items(), key=lambda item: -item[1])
     # print(sorted_items)
+    if len(sorted_items) <= min_number:
+        return sorted_items
+
     # filter
     th = sorted_items[0][1] / 3
     filtered_items = [item for item in sorted_items if item[1] > th]
     # print(filtered_items)
+
     return filtered_items
 
 

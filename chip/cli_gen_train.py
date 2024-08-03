@@ -52,7 +52,7 @@ template_prompt4 = """您是一位中医学专家，请根据提供的病情描�
 map23 = data_loader.load_map23()
 
 
-def gen_train_set(fn_dst):
+def gen_train_set(fn_dst, i_from=0, i_to=sys.maxsize):
     raw_train = data_loader.load(f"{data_path}/round1_traning_data/train.json")
 
     text_list = [r.get("临床资料") for r in raw_train]
@@ -62,6 +62,11 @@ def gen_train_set(fn_dst):
     for i, r in enumerate(raw_train):
         name = r.get("案例编号", None)
         print(f"{i}={name}")
+        if i < i_from:
+            continue
+        if i >= i_to:
+            break
+
         raw_text = r.get("临床资料", None)
 
         # 一个字的不要
@@ -118,4 +123,4 @@ def gen_train_set(fn_dst):
 
 
 if __name__ == "__main__":
-    gen_train_set(fn_dst="data/train_gt.json")
+    gen_train_set(fn_dst="data/test_gt.json", i_from=180)

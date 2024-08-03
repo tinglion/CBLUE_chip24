@@ -21,7 +21,7 @@ def chat_complete(q="中国的首都是哪里？"):
         incremental_output=False,  # get streaming output incrementally
     )
     if response.status_code == HTTPStatus.OK:
-        print(response.output.choices[0]["message"]["content"], end="")
+        print(response.output.choices[0]["message"]["content"])
         return response.output.choices[0]["message"]["content"]
     else:
         print(
