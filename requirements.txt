@@ -2,6 +2,7 @@ openai
 # numpy
 scikit-learn
 pandas
+pyarrow
 boto3
 jieba
 gensim
@@ -9,3 +10,4 @@ gensim
 transformers #==4.5.1
 # qwen 
 dashscope
+qianfan

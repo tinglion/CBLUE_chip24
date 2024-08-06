@@ -1,8 +1,11 @@
-
-
 # {'A':['a', 3], 'B':['b', 5]}  {'A':['a', 1], 'B':['c', 2], 'C':['c', 3]}
 # => {'A':['a', 4], 'B':['b', 5], 'C':['c', 3]}
 def merge_dict_2(d1, d2):
+    if not d1:
+        return d2
+    if not d2:
+        return d1
+
     result = {}
     for key in d1:
         if key in d2:
