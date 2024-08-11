@@ -45,7 +45,7 @@ def parse_candidate(candidate: str):
     for seg in segs:
         words = seg.split(":")
         l[words[0]] = words[1]
-        l[words[1]] = words[0]
+        l2[words[1]] = words[0]
     return l, l2
 
 
@@ -92,11 +92,33 @@ def rank(data, min_number=3):
     total_sum = sum(rlist.values())
     sorted_items = sorted(rlist.items(), key=lambda item: -item[1])
     # print(sorted_items)
+    return sorted_items
+
+
+# {'A':{'a':4}, 'B':{'b': 5, 'c':2}, 'C':{'c': 3}}
+# => [('b',5), ('c', 5), ('a', 4)]
+def rank3(data, min_number=3):
+    if len(data) < 1:
+        return []
+    rlist = {}
+    # merge
+    for k1 in data:
+        for k2 in data[k1]:
+            if k2 not in rlist:
+                rlist[k2] = 0
+            rlist[k2] += data[k1][k2]
+    # sort
+    sorted_items = sorted(rlist.items(), key=lambda item: -item[1])
+    # print(sorted_items)
+    return sorted_items
+
+
+def filter(sorted_items, min_number=3, filter_ratio=0.3):
     if len(sorted_items) <= min_number:
         return sorted_items
-
     # filter
-    th = sorted_items[0][1] / 3
+    th = sorted_items[0][1] * filter_ratio
+    print(f"threshold={th}")
     filtered_items = [item for item in sorted_items if item[1] > th]
     # print(filtered_items)
 

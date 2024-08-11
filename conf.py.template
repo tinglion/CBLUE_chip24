@@ -1,7 +1,37 @@
+import json
+import logging
+import os
+import platform
+import sys
+import traceback
 
-OPENAI_CONF = dict(
-    OPENAI_API_KEY="",
-    OPENAI_API_BASE="http://10.19.53.220:9501/api/v1/856e6fce9c2a9f2a",
-    GPT_MODEL="gpt-4o",  # "gpt-4-1106-preview",
+data_path = (
+    "D:/fdata/ai/med/CHIP2004"
+    if platform.system() == "Windows"
+    else "/mnt/windows/sting/data/CHIP2004"
 )
-QWEN_CONF = dict(API_KEY="")
+
+LLM_CONF = dict(
+    openai=dict(
+        API_KEY="",
+        API_BASE="http://10.19.53.220:9501/api/v1/856e6fce9c2a9f2a",
+        MODEL_NAME="gpt-4o",  # "gpt-4-1106-preview",
+    ),
+    qwen=dict(
+        API_KEY="",
+        API_BASE="",
+        MODEL_NAME="qwen-max-0428",
+    ),
+    doubao=dict(
+        API_KEY="",
+        API_BASE="https://ark.cn-beijing.volces.com/api/v3",
+        MODEL_NAME="ep-20240730154841-b7hqk",
+    ),
+    qianfan=dict(
+        API_KEY="",
+        API_BASE="",
+        MODEL_NAME="ERNIE-4.0-Turbo-8K",
+        ACCESS_KEY="",
+        SECRET_KEY="",
+    ),
+)

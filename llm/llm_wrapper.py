@@ -9,6 +9,7 @@ from http import HTTPStatus
 import dashscope
 import qianfan
 from openai import OpenAI
+from volcenginesdkarkruntime import Ark
 
 sys.path.append(".")
 from conf import LLM_CONF
@@ -52,14 +53,24 @@ def chat_complete(q: str, llm_name="openai"):
             model=LLM_CONF[llm_name]["MODEL_NAME"],
             messages=[input_msgs[1]],
         )
-        print(resp["body"])
+        # print(resp["body"])
         output_msg = Message(resp["body"]["result"])
-    else:  # doubao openai
-        client = OpenAI(
+    elif llm_name == "doubao":
+        client_doubao = Ark(
+            ak=LLM_CONF["doubao"]["ACCESS_KEY"], sk=LLM_CONF["doubao"]["SECRET_KEY"]
+        )
+        completion = client_doubao.chat.completions.create(
+            model=LLM_CONF["doubao"]["ENDPOINT"],
+            messages=input_msgs,
+        )
+        # print(completion.choices[0].message.content)
+        output_msg = completion.choices[0].message
+    else:  # openai
+        client_openai = OpenAI(
             base_url=LLM_CONF[llm_name]["API_BASE"],
             api_key=LLM_CONF[llm_name]["API_KEY"],
         )
-        completion = client.chat.completions.create(
+        completion = client_openai.chat.completions.create(
             model=LLM_CONF[llm_name]["MODEL_NAME"],
             messages=input_msgs,
         )
