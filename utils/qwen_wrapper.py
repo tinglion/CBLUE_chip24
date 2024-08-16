@@ -5,16 +5,16 @@ from http import HTTPStatus
 import dashscope
 
 sys.path.append(".")
-from conf import QWEN_CONF
+from conf import LLM_CONF
 
-os.environ["DASHSCOPE_API_KEY"] = QWEN_CONF["API_KEY"]
-dashscope.api_key = QWEN_CONF["API_KEY"]
+os.environ["DASHSCOPE_API_KEY"] = LLM_CONF["qwen"]["API_KEY"]
+dashscope.api_key = LLM_CONF["qwen"]["API_KEY"]
 
 
 def chat_complete(q="中国的首都是哪里？"):
     messages = [{"role": "user", "content": q}]
     response = dashscope.Generation.call(
-        "qwen-max-0428",
+        LLM_CONF["qwen"]["MODEL_NAME"],
         messages=messages,
         result_format="message",  # set the result to be "message"  format.
         stream=False,  # set streaming output

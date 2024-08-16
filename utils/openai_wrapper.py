@@ -7,18 +7,18 @@ import traceback
 
 from openai import OpenAI
 
-from conf import OPENAI_CONF
+from conf import LLM_CONF
 
 logger = logging.getLogger(__name__)
 
 
-def chat_complete(q: str, openai_conf=OPENAI_CONF):
+def chat_complete(q: str, openai_conf=LLM_CONF["openai"]):
     client = OpenAI(
-        base_url=openai_conf["OPENAI_API_BASE"],
-        api_key=openai_conf["OPENAI_API_KEY"],
+        base_url=openai_conf["API_BASE"],
+        api_key=openai_conf["API_KEY"],
     )
     completion = client.chat.completions.create(
-        model=openai_conf["GPT_MODEL"],
+        model=openai_conf["MODEL_NAME"],
         messages=[
             {
                 "role": "system",

@@ -18,13 +18,13 @@ exp_settings = {
     "2": [
         "openai",
         "qwen",
-        "doubao",
+        # "doubao",
         # "qianfan",
     ],
     "3": [
         "openai",
         "qwen",
-        "doubao",
+        # "doubao",
         # "qianfan",
     ],
     "4": "openai",
@@ -87,7 +87,7 @@ def revise_dict3(response_obj, cmap, cmap_r):
 def predict_2(raw_text, result1, candidate2):
     candidate2_map, candidate2_map_r = data_loader.parse_candidate(candidate2)
 
-    example2 = {v1: {"A": 1, "B": 2} for v1 in result1}
+    example2 = {v1: {"A": 1} for v1 in result1}  # , "B": 2
     prompt2 = (
         prompt_template.template_prompt2.replace("{raw_text}", raw_text)
         .replace("{result1}", ";".join(result1))
@@ -213,7 +213,7 @@ def predict(fn, fn_dst=None, i_from=0, i_to=sys.maxsize):
             )
             print(f"result2_full={result2_full}")
             result2_filtered = data_loader.filter(
-                result2_full, min_number=1, filter_ratio=1.0 / 3
+                result2_full, max_number=4, filter_ratio=1.0 / 3
             )
             print(f"result2_filtered={result2_filtered}")
 
@@ -225,7 +225,7 @@ def predict(fn, fn_dst=None, i_from=0, i_to=sys.maxsize):
             )
             print(f"result3_full={result3_full}")
             result3_filtered = data_loader.filter(
-                result3_full, min_number=1, filter_ratio=1.0 / 3
+                result3_full, max_number=3, filter_ratio=1.0 / 3
             )
             print(f"result3_filtered={result3_filtered}")
 
@@ -264,15 +264,15 @@ if __name__ == "__main__":
     if not os.path.exists(dst_folder):
         os.makedirs(dst_folder)
 
-    # predict(
-    #     f"{data_path}/round2_A榜_data/A榜.json",
-    #     # fn_dst="./temp/NE_A_14.txt",
-    #     i_from=29,
-    #     i_to=30,
-    # )
     predict(
-        f"{data_path}/round1_traning_data/train.json",
-        fn_dst="./temp/NE_train_14.txt",
-        i_from=180,
-        # i_to=200,
+        f"{data_path}/round2_A榜_data/A榜.json",
+        # fn_dst="./temp/NE_A_41.txt",
+        i_from=2,
+        i_to=3,
     )
+    # predict(
+    #     f"{data_path}/round1_traning_data/train.json",
+    #     fn_dst="./temp/NE_A_2.txt",
+    #     i_from=197,
+    #     i_to=198,
+    # )

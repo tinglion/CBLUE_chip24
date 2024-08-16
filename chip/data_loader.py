@@ -113,15 +113,16 @@ def rank3(data, min_number=3):
     return sorted_items
 
 
-def filter(sorted_items, min_number=3, filter_ratio=0.3):
-    if len(sorted_items) <= min_number:
-        return sorted_items
+def filter(sorted_items, max_number=4, min_number=1, filter_ratio=0.3):
+    # if len(sorted_items) <= min_number:
+    #     return sorted_items
     # filter
     th = sorted_items[0][1] * filter_ratio
     print(f"threshold={th}")
     filtered_items = [item for item in sorted_items if item[1] > th]
     # print(filtered_items)
-
+    if len(filtered_items) > max_number:
+        filtered_items = filtered_items[0:max_number]
     return filtered_items
 
 

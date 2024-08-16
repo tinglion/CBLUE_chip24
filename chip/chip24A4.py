@@ -267,14 +267,15 @@ if __name__ == "__main__":
     if not os.path.exists(dst_folder):
         os.makedirs(dst_folder)
 
-    predict(
-        f"{data_path}/round2_A榜_data/A榜.json",
-        fn_dst="./temp/NE_A_4.txt",
-        i_from=10,
-        i_to=11,
-    )
     # predict(
-    #     f"{data_path}/round1_traning_data/train.json",
-    #     fn_dst="./temp/NE_A_2.txt",
-    #     i_to=3,
+    #     f"{data_path}/round2_A榜_data/A榜.json",
+    #     fn_dst="./temp/NE_A_4.txt",
+    #     i_from=10,
+    #     i_to=11,
     # )
+    predict(
+        f"{data_path}/round1_traning_data/train.json",
+        # fn_dst="./temp/NE_A_2.txt",
+        i_from=199,
+        i_to=200
+    )
