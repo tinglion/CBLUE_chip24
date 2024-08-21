@@ -151,47 +151,72 @@ def load_map23(fn="data/map23.json", src=f"{data_path}/round1_traning_data/train
     return map23
 
 
-if __name__ == "__main__":
-    data_list = [
-        {
-            "发热": ["C", 2],
-            "浮肿": ["G", 2],
-            "嗜睡": ["E", 3],
-            "鼻衄": ["E", 3],
-            "恶心": ["H", 2],
-            "呕吐": ["H", 2],
-            "尿少": ["G", 2],
-            "明显消瘦": ["G", 2],
-            "皮肤干燥": ["E", 2],
-            "鼻翼煽动": ["G", 2],
-            "呼吸困难": ["E", 3],
-            "心律不齐": ["E", 3],
-            "呕吐咖啡样物": ["H", 3],
-            "大便1日数次，呈柏油样便": ["H", 3],
-            "呕血": ["H", 3],
-            "呼吸慢而不整": ["E", 3],
-            "面色晦暗": ["E", 3],
-            "嗜睡衰竭状态": ["E", 3],
-            "时有恶 心呕吐": ["H", 2],
-            "呼吸深长而慢": ["E", 3],
-            "脉沉细微弱无力而迟": ["E", 3],
-            "舌嫩润齿痕尖微赤": ["G", 2],
-            "苔薄白干中心微黄": ["H", 2],
-        },
-        {
-            "干咳": ["I", 2],
-            "入夜尤甚": ["I", 2],
-            "咳时无痰": ["I", 2],
-            "胸中闷胀": ["I", 1],
-            "唇舌及咽喉灼干": ["D", 2],
-            "声音略带嘶哑": ["D", 1],
-            "心烦": ["D", 1],
-            "食欲减退": ["J", 1],
-            "无苔": ["I", 2],
-            "脉数无力": ["D", 1],
-        },
-    ]
-    for data in data_list:
-        print(rank(data))
+def load_map12(fn="data/map12.json", src=f"{data_path}/round1_traning_data/train.json"):
+    newmap = {}
+    if os.path.exists(fn):
+        with open(fn, "r", encoding="utf8") as fp:
+            newmap = json.load(fp)
+            fp.close()
+    else:
+        data_raw = load(src)
+        for i, r in enumerate(data_raw):
+            text = r.get("推理能力-病机推断", None)
+            segs = text.split(";")
+            for seg in segs:
+                pair = seg.split(":")
+                k = pair[0]
+                v = pair[1]
+                if k not in newmap:
+                    newmap[k] = []
+                newmap[k].append(v)
+        with open(fn, "w", encoding="utf8") as fp:
+            json.dump(newmap, fp, ensure_ascii=False)
+            fp.close()
 
-    load_map23()
+    return newmap
+
+if __name__ == "__main__":
+    # data_list = [
+    #     {
+    #         "发热": ["C", 2],
+    #         "浮肿": ["G", 2],
+    #         "嗜睡": ["E", 3],
+    #         "鼻衄": ["E", 3],
+    #         "恶心": ["H", 2],
+    #         "呕吐": ["H", 2],
+    #         "尿少": ["G", 2],
+    #         "明显消瘦": ["G", 2],
+    #         "皮肤干燥": ["E", 2],
+    #         "鼻翼煽动": ["G", 2],
+    #         "呼吸困难": ["E", 3],
+    #         "心律不齐": ["E", 3],
+    #         "呕吐咖啡样物": ["H", 3],
+    #         "大便1日数次，呈柏油样便": ["H", 3],
+    #         "呕血": ["H", 3],
+    #         "呼吸慢而不整": ["E", 3],
+    #         "面色晦暗": ["E", 3],
+    #         "嗜睡衰竭状态": ["E", 3],
+    #         "时有恶 心呕吐": ["H", 2],
+    #         "呼吸深长而慢": ["E", 3],
+    #         "脉沉细微弱无力而迟": ["E", 3],
+    #         "舌嫩润齿痕尖微赤": ["G", 2],
+    #         "苔薄白干中心微黄": ["H", 2],
+    #     },
+    #     {
+    #         "干咳": ["I", 2],
+    #         "入夜尤甚": ["I", 2],
+    #         "咳时无痰": ["I", 2],
+    #         "胸中闷胀": ["I", 1],
+    #         "唇舌及咽喉灼干": ["D", 2],
+    #         "声音略带嘶哑": ["D", 1],
+    #         "心烦": ["D", 1],
+    #         "食欲减退": ["J", 1],
+    #         "无苔": ["I", 2],
+    #         "脉数无力": ["D", 1],
+    #     },
+    # ]
+    # for data in data_list:
+    #     print(rank(data))
+
+    load_map12()
+    # load_map23()

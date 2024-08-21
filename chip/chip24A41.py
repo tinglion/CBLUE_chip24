@@ -13,8 +13,15 @@ from utils import dict_utils, ee_wrapper, file_utils, json_utils
 
 logger = logging.getLogger(__name__)
 
+test_only = False
+
 exp_settings = {
-    "1": "openai",
+    "1": [
+        "openai",
+        "qwen",
+        "doubao",
+        "qianfan",
+    ],
     "2": [
         "openai",
         "qwen",
@@ -31,6 +38,7 @@ exp_settings = {
 }
 
 map23 = data_loader.load_map23()
+map12 = data_loader.load_map12()
 
 
 def predict_1(raw_text, entity_list):
@@ -39,10 +47,13 @@ def predict_1(raw_text, entity_list):
         json.dumps(entity_list, ensure_ascii=False),
     )
     print(f"prompt1={prompt1}")
-    response1 = llm_wrapper.chat_complete(prompt1, exp_settings["1"])
-    # print(f"response={response1}")
-    response1_obj = json_utils.cvt_str_to_obj(response1)
-    result1 = response1_obj.get("临床表现信息", [])
+
+    result1 = set()
+    for llm_model in exp_settings["1"]:
+        response1 = llm_wrapper.chat_complete(prompt1, llm_name=llm_model)
+        response1_obj = json_utils.cvt_str_to_obj(response1)
+        print(f"{llm_model}={response1}")
+        result1 = result1.union(set(response1_obj.get("临床表现信息", [])))
     print(f"result1={result1}")
     return result1
 
@@ -87,6 +98,13 @@ def revise_dict3(response_obj, cmap, cmap_r):
 def predict_2(raw_text, result1, candidate2):
     candidate2_map, candidate2_map_r = data_loader.parse_candidate(candidate2)
 
+    sugguest2 = set()
+    for name1 in result1:
+        if name1 in map12:
+            for t1 in map12[name1]:
+                if t1 in candidate2_map_r:
+                    sugguest2.add(t1)
+
     example2 = {v1: {"A": 1} for v1 in result1}  # , "B": 2
     prompt2 = (
         prompt_template.template_prompt2.replace("{raw_text}", raw_text)
@@ -94,6 +112,10 @@ def predict_2(raw_text, result1, candidate2):
         .replace("{candidate2}", candidate2)
         .replace("{example2}", json.dumps(example2, ensure_ascii=False))
     )
+    if not test_only:
+        prompt2 = prompt2.replace(
+            "{sugguest2}", json.dumps(list(sugguest2), ensure_ascii=False)
+        )
     print(f"promp2={prompt2}")
 
     response2_obj = dict()
@@ -118,19 +140,24 @@ def predict_3(raw_text, result2_full, candidate3):
     candidate3_map, candidate3_map_r = data_loader.parse_candidate(candidate3)
 
     # 根据训练集合得到的结果，但是未必在候选项里面
-    sugguest3 = []
+    sugguest3 = set()
     for name2 in result2_name:
-        if name2 in map23 and name2 in candidate3_map_r:
-            sugguest3 += map23[name2]
+        if name2 in map23:
+            for t3 in map23[name2]:
+                if t3 in candidate3_map_r:
+                    sugguest3.add(t3)
 
-    example3 = {v2: {"A": 1, "B": 2} for v2 in result2_name}
+    example3 = {v2: {"B": 3} for v2 in result2_name}
     prompt3 = (
         prompt_template.template_prompt3.replace("{raw_text}", raw_text)
         .replace("{example3}", json.dumps(example3, ensure_ascii=False))
         .replace("{result2}", ";".join(result2_name))
         .replace("{candidate3}", candidate3)
-        .replace("{sugguest3}", json.dumps(sugguest3, ensure_ascii=False))
     )
+    if not test_only:
+        prompt3 = prompt3.replace(
+            "{sugguest3}", json.dumps(list(sugguest3), ensure_ascii=False)
+        )
     print(f"promp3={prompt3}")
 
     response3_obj = {}
@@ -166,7 +193,7 @@ def predict_4(raw_text, result2_full, result3_full):
     response4 = llm_wrapper.chat_complete(prompt4, exp_settings["4"])
     print(f"response4={response4}")
     response4_obj = json_utils.cvt_str_to_obj(response4)
-    result4 = "临证体会：%s。辨证：%s" % (
+    result4 = "临证体会：%s辨证：%s" % (
         response4_obj.get("临证体会", ""),
         response4_obj.get("辨证", ""),
     )
@@ -220,7 +247,7 @@ def predict(fn, fn_dst=None, i_from=0, i_to=sys.maxsize):
             # 3 证候 [(A,2,肾阴虚)]
             result3_full = predict_3(
                 raw_text,
-                result2_full=result2_full,
+                result2_full=result2_full,  # result2_full result2_filtered
                 candidate3=r.get("证候选项"),
             )
             print(f"result3_full={result3_full}")
@@ -267,12 +294,14 @@ if __name__ == "__main__":
     predict(
         f"{data_path}/round2_A榜_data/A榜.json",
         # fn_dst="./temp/NE_A_41.txt",
-        i_from=2,
-        i_to=3,
+        i_from=12,
+        i_to=13,
     )
+
+    # test_only = True
     # predict(
     #     f"{data_path}/round1_traning_data/train.json",
-    #     fn_dst="./temp/NE_A_2.txt",
-    #     i_from=197,
-    #     i_to=198,
+    #     fn_dst="./temp/NE_train_41.txt",
+    #     i_from=180,
+    #     # i_to=181,
     # )
