@@ -44,8 +44,9 @@ def parse_candidate(candidate: str):
     segs = candidate.split(";")
     for seg in segs:
         words = seg.split(":")
-        l[words[0]] = words[1]
-        l2[words[1]] = words[0]
+        if len(words) > 1:
+            l[words[0]] = words[1]
+            l2[words[1]] = words[0]
     return l, l2
 
 
@@ -119,7 +120,7 @@ def filter(sorted_items, max_number=4, min_number=1, filter_ratio=0.3):
     # filter
     th = sorted_items[0][1] * filter_ratio
     print(f"threshold={th}")
-    filtered_items = [item for item in sorted_items if item[1] > th]
+    filtered_items = [item for item in sorted_items if item[1] >= th]
     # print(filtered_items)
     if len(filtered_items) > max_number:
         filtered_items = filtered_items[0:max_number]
@@ -174,6 +175,7 @@ def load_map12(fn="data/map12.json", src=f"{data_path}/round1_traning_data/train
             fp.close()
 
     return newmap
+
 
 if __name__ == "__main__":
     # data_list = [

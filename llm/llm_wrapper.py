@@ -32,7 +32,7 @@ def chat_complete(q: str, llm_name="openai"):
     input_msgs = [
         {
             "role": "system",
-            "content": "你是一个中医医学专家，根据提供的内容回答问题",
+            "content": "您是一位中医学专家，精通中医病机辩证推断。",
         },
         {"role": "user", "content": q},
     ]

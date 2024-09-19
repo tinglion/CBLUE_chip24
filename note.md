@@ -2,6 +2,12 @@
 
 watch -n 1 nvidia-smi
 
+## TODO
+
+* finetune2
+* finetune3
+* 对抗
+
 ## chip
 
 ### 1 无监督，优化prompt
@@ -70,3 +76,24 @@ nohup python baselines/run_ie.py    --data_dir=/mnt/windows/sting/data/CMeIE-V2 
 
 python baselines/run_ie.py --data_dir=/mnt/windows/sting/data/CMeIE-V2        --model_type=bert        --model_dir=./data/output/ie       --model_name=chinese-bert-wwm-ext         --task_name=ie        --output_dir=data/output        --result_output_dir=data/result_output --do_predict  --max_length=128  --eval_batch_size=32
 ```
+
+
+您是一位中医学专家，结合中医相关专业知识，请从病情描述提取其他医疗结构的历史诊断，并从病机候选中找到推理出来的病机，用json格式返回。
+注意不要提取当前诊查信息。
+注意诊断名称不是症状。
+
+病情描述：吴某，女，21岁。初诊：1975年3月16日。主诉及病史：患者因情绪刺激，患精神分裂症后住院1年半，出院后病症未见显著改善。诊查：刻诊面色眺白而浮肿，语言能够对答而无伦次，自诉心慌、胆怯，耳边听到有人讲话，大便干结。家属诉病人有时翻眼睛，有时发抖，有时胡思乱想；出言不伦，有时大声吵闹。行为幼稚，贪吃懒做。诊其脉促，舌淡边有齿印。
+
+病机候选项：A:气虚不能固卫腠理;B:气血瘀滞;C:心阴;D:肝木上亢;E:气乱于上之候;F:肾精不足;G:中气渐虚;H:痰涎壅积;I:内陷血室;J:心脾之损
+
+严格按照输出json格式：{
+  "病史诊断":[
+{
+"诊断名称":"#原文#",
+"推理病机":["#病机标签#"]
+},{
+"诊断名称":"#原文#",
+"推理病机":["#病机标签#"]
+}],
+"当前诊查"："#原文#"
+}

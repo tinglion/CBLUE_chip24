@@ -8,7 +8,11 @@ import traceback
 sys.path.append(".")
 from chip import data_loader
 from conf import LLM_CONF, data_path
-from llm import llm_wrapper, prompt_template
+from llm import llm_wrapper
+from llm import prompt_template_43 as prompt_template
+from llm.task_1 import predict_1
+from llm.task_2 import predict_2
+from llm.task_4 import predict_4
 from utils import dict_utils, ee_wrapper, file_utils, json_utils
 
 logger = logging.getLogger(__name__)
@@ -18,7 +22,7 @@ test_only = False
 exp_settings = {
     "1": [
         "openai",
-        "qwen",
+        # "qwen",
         # "doubao",
         # "qianfan",
     ],
@@ -38,102 +42,6 @@ exp_settings = {
 }
 
 map23 = data_loader.load_map23()
-map12 = data_loader.load_map12()
-
-
-def predict_1(raw_text, entity_list):
-    prompt1 = prompt_template.template_prompt1.replace("{raw_text}", raw_text).replace(
-        "{sugguest1}",
-        json.dumps(entity_list, ensure_ascii=False),
-    )
-    print(f"prompt1={prompt1}")
-
-    result1 = set()
-    for llm_model in exp_settings["1"]:
-        response1 = llm_wrapper.chat_complete(prompt1, llm_name=llm_model)
-        response1_obj = json_utils.cvt_str_to_obj(response1)
-        print(f"{llm_model}={response1}")
-        result1 = result1.union(set(response1_obj.get("临床表现信息", [])))
-    print(f"result1={result1}")
-    return result1
-
-
-def revise_dict(response_obj, cmap, cmap_r):
-    response_obj2 = {}
-    for k1 in response_obj:
-        if len(response_obj[k1]) < 2:
-            continue
-
-        k2 = response_obj[k1][0]
-        # qianfan format bug
-        if isinstance(k2, list):
-            k2 = k2[0]
-
-        if k2 not in cmap and k2 in cmap_r:
-            k2 = cmap_r[k2]
-
-        response_obj2[k1] = [k2, response_obj[k1][1]]
-    return response_obj2
-
-
-def revise_dict3(response_obj, cmap, cmap_r):
-    response_obj2 = {}
-    for k1 in response_obj:
-        for k2 in response_obj[k1]:
-            if response_obj[k1][k2] > 0:
-                if k1 not in response_obj2:
-                    response_obj2[k1] = {}
-
-                real_k2 = k2
-                # qianfan format bug
-                if isinstance(k2, list):
-                    real_k2 = k2[0]
-                if real_k2 not in cmap and real_k2 in cmap_r:
-                    real_k2 = cmap_r[real_k2]
-
-                response_obj2[k1][real_k2] = response_obj[k1][k2]
-    return response_obj2
-
-
-def predict_2(raw_text, result1, candidate2):
-    candidate2_map, candidate2_map_r = data_loader.parse_candidate(candidate2)
-
-    sugguest2 = set()
-    for name1 in result1:
-        if name1 in map12:
-            for t1 in map12[name1]:
-                if t1 in candidate2_map_r:
-                    sugguest2.add(t1)
-
-    example2 = {v1: {"A": 1} for v1 in result1}  # , "B": 2
-    prompt2 = (
-        prompt_template.template_prompt2.replace("{raw_text}", raw_text)
-        .replace("{result1}", ";".join(result1))
-        .replace("{candidate2}", candidate2)
-        .replace("{example2}", json.dumps(example2, ensure_ascii=False))
-    )
-    if not test_only:
-        prompt2 = prompt2.replace(
-            "{sugguest2}", json.dumps(list(sugguest2), ensure_ascii=False)
-        )
-    print(f"promp2={prompt2}")
-
-    response2_obj = dict()
-    for llm_model in exp_settings["2"]:
-        response2_tmp = llm_wrapper.chat_complete(prompt2, llm_name=llm_model)
-        response2_tmp_obj = json_utils.cvt_str_to_obj(response2_tmp)
-        print(f"{llm_model}={response2_tmp_obj}")
-
-        response2_tmp_obj2 = revise_dict3(
-            response2_tmp_obj, candidate2_map, candidate2_map_r
-        )
-        response2_obj = dict_utils.merge_dict_3(response2_obj, response2_tmp_obj2)
-    print(f"merged={response2_obj}")
-
-    result2_scored = data_loader.rank3(response2_obj)
-
-    result2_full = [(r2[0], r2[1], candidate2_map[r2[0]]) for r2 in result2_scored]
-    return result2_full
 
 
 def predict_3(raw_text, result2_full, candidate3):
@@ -166,11 +74,13 @@ def predict_3(raw_text, result2_full, candidate3):
         response3_gpt = llm_wrapper.chat_complete(prompt3, llm_name=llm_model)
         response3_gpt_obj = json_utils.cvt_str_to_obj(response3_gpt)
         print(f"{llm_model}={response3_gpt_obj}")
-        
-        response3_gpt_obj2 = revise_dict3(
+
+        response3_gpt_obj2 = dict_utils.revise_dict3(
             response3_gpt_obj, candidate3_map, candidate3_map_r
         )
-        response3_obj = dict_utils.merge_dict_3(response3_obj, response3_gpt_obj2)
+        response3_obj = dict_utils.merge_dict_3(
+            response3_obj, response3_gpt_obj2, min_value=2
+        )
 
     result3_scored = data_loader.rank3(response3_obj)
     result3_full = [
@@ -179,27 +89,6 @@ def predict_3(raw_text, result2_full, candidate3):
         if r3[0] in candidate3_map
     ]
     return result3_full
-
-
-def predict_4(raw_text, result2_full, result3_full):
-    prompt4 = (
-        prompt_template.template_prompt4.replace("{raw_text}", raw_text)
-        .replace(
-            "{example4}",
-            json.dumps(prompt_template.template_example4, ensure_ascii=False),
-        )
-        .replace("{result2}", ";".join([r2[2] for r2 in result2_full]))
-        .replace("{result3}", ";".join([r3[2] for r3 in result3_full]))
-    )
-    print(f"prompt4={prompt4}")
-    response4 = llm_wrapper.chat_complete(prompt4, exp_settings["4"])
-    print(f"response4={response4}")
-    response4_obj = json_utils.cvt_str_to_obj(response4)
-    result4 = "临证体会：%s辨证：%s" % (
-        response4_obj.get("临证体会", ""),
-        response4_obj.get("辨证", ""),
-    )
-    return result4
 
 
 # TODO 换模型，逗号切分，保证只推一个，临证体会更多提示
@@ -230,46 +119,61 @@ def predict(fn, fn_dst=None, i_from=0, i_to=sys.maxsize):
                     entity_list.append(en["entity"])
 
             # 1
-            result1 = predict_1(
+            result1_full, result1_weighted = predict_1(
                 raw_text,
+                model_list=exp_settings["1"],
                 entity_list=entity_list if entity_list else ["大便干"],
             )
 
             # 2 病机 [(A,2,肾阴虚)]
+            # 上一步数据太多，很多重要性不高，需要weight
             result2_full = predict_2(
                 raw_text=raw_text,
-                result1=result1,
+                result1_weighted=result1_weighted,
                 candidate2=r.get("病机选项"),
+                model_list=exp_settings["2"],
             )
-            print(f"result2_full={result2_full}")
+            # 某一个值太高，导致后面大部分被过滤
             result2_filtered = data_loader.filter(
-                result2_full, max_number=5, filter_ratio=0.3
+                result2_full, max_number=5, filter_ratio=0.2
             )
+            if len(result2_filtered) >= 5:
+                result2_filtered = data_loader.filter(
+                    result2_full, max_number=5, filter_ratio=0.25
+                )
             print(f"result2_filtered={result2_filtered}")
 
             # 3 证候 [(A,2,肾阴虚)]
             result3_full = predict_3(
                 raw_text,
-                result2_full=result2_filtered,  # result2_full result2_filtered
+                result2_full=result2_full,  # result2_full result2_filtered
                 candidate3=r.get("证候选项"),
             )
             print(f"result3_full={result3_full}")
+
             result3_filtered = data_loader.filter(
                 result3_full, max_number=5, filter_ratio=0.3
             )
+            # 控制数量
+            if len(result3_filtered) >= 4:
+                result3_filtered = data_loader.filter(
+                    result3_full, max_number=5, filter_ratio=0.4
+                )
             print(f"result3_filtered={result3_filtered}")
 
             # 临证体会
             result4 = predict_4(
                 raw_text,
+                result1=[k for k in result1_weighted],
                 result2_full=result2_full,
                 result3_full=result3_full,
+                model_name=exp_settings["4"],
             )
 
             # 23用精简后的结果
             result_final = "%s@%s@%s@%s@%s" % (
                 name,
-                ";".join(result1),
+                ";".join(result1_full),
                 ";".join([r2[0] for r2 in result2_filtered]),
                 ";".join([r3[0] for r3 in result3_filtered]),
                 result4,
@@ -294,24 +198,25 @@ if __name__ == "__main__":
     if not os.path.exists(dst_folder):
         os.makedirs(dst_folder)
 
+    # test_only = False
     # predict(
     #     f"{data_path}/round2_A榜_data/A榜.json",
-    #     # fn_dst="./temp/NE_A_41.txt",
-    #     i_from=0,
-    #     i_to=1,
+    #     fn_dst="./temp/NE_A_43.txt",
+    #     i_from=43,
+    #     i_to=44,
     # )
 
+    test_only = False
     predict(
         f"{data_path}/round3_B榜_data.zip/B榜.json",
-        fn_dst="./temp/NE_B_41.txt",
+        fn_dst="./temp/NE_B_43.txt",
         # i_from=0,
         # i_to=1,
     )
 
-    # test_only = True
     # predict(
     #     f"{data_path}/round1_traning_data/train.json",
-    #     fn_dst="./temp/NE_train_41.txt",
-    #     i_from=196,
-    #     i_to=197,
+    #     fn_dst="./temp/NE_train_43.txt",
+    #     i_from=180,
+    #     i_to=190,
     # )

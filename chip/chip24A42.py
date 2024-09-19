@@ -2,13 +2,15 @@ import json
 import logging
 import os
 import platform
+import re
 import sys
 import traceback
 
 sys.path.append(".")
 from chip import data_loader
 from conf import LLM_CONF, data_path
-from llm import llm_wrapper, prompt_template
+from llm import llm_wrapper
+from llm import prompt_template_42 as prompt_template
 from utils import dict_utils, ee_wrapper, file_utils, json_utils
 
 logger = logging.getLogger(__name__)
@@ -41,19 +43,50 @@ map23 = data_loader.load_map23()
 map12 = data_loader.load_map12()
 
 
+separators = "[，‌。‌：‌；、‌:;]"
+
+
+def seg_sentence(raw_text):
+    s = (
+        raw_text.replace("自诉", "")
+        .replace("诊其", "")
+        .replace("诊时", "")
+        .replace("症见", "")
+    )
+    raw_split = re.split(separators, s)
+    result = set()
+    for seg in raw_split:
+        if not seg or len(seg) <= 1:
+            continue
+        result.add(seg)
+
+        if seg.find("伴") == 0:
+            result.add(seg[1:])
+        if seg.find("(") >= 0:
+            result.add(re.sub(r"\(.*?\)", "", seg))
+        if seg.find("（") >= 0:
+            result.add(re.sub(r"\（.*?\）", "", seg))
+    return result
+
+
 def predict_1(raw_text, entity_list):
+    result1 = seg_sentence(raw_text)
+
     prompt1 = prompt_template.template_prompt1.replace("{raw_text}", raw_text).replace(
         "{sugguest1}",
-        json.dumps(entity_list, ensure_ascii=False),
+        json.dumps(list(result1), ensure_ascii=False),
     )
     print(f"prompt1={prompt1}")
 
-    result1 = set()
     for llm_model in exp_settings["1"]:
         response1 = llm_wrapper.chat_complete(prompt1, llm_name=llm_model)
         response1_obj = json_utils.cvt_str_to_obj(response1)
         print(f"{llm_model}={response1}")
-        result1 = result1.union(set(response1_obj.get("临床表现信息", [])))
+
+        for item in response1_obj.get("临床表现信息", []):
+            # print(item)
+            if item:
+                result1 = result1.union(set(re.split(separators, item)))
     print(f"result1={result1}")
     return result1
 
@@ -105,7 +138,7 @@ def predict_2(raw_text, result1, candidate2):
                 if t1 in candidate2_map_r:
                     sugguest2.add(t1)
 
-    example2 = {v1: {"A": 1} for v1 in result1}  # , "B": 2
+    example2 = {"B": 1}  # , "B": 2
     prompt2 = (
         prompt_template.template_prompt2.replace("{raw_text}", raw_text)
         .replace("{result1}", ";".join(result1))
@@ -124,15 +157,22 @@ def predict_2(raw_text, result1, candidate2):
         response2_tmp_obj = json_utils.cvt_str_to_obj(response2_tmp)
         print(f"{llm_model}={response2_tmp_obj}")
 
-        response2_tmp_obj2 = revise_dict3(
-            response2_tmp_obj, candidate2_map, candidate2_map_r
-        )
-        response2_obj = dict_utils.merge_dict_3(response2_obj, response2_tmp_obj2)
+        for k in response2_tmp_obj:
+            if response2_tmp_obj[k] < 1:
+                continue
+            if response2_tmp_obj[k] > 3:
+                response2_tmp_obj[k] = 3
+
+            if k not in response2_obj:
+                response2_obj[k] = 0
+            response2_obj[k] += response2_tmp_obj[k]
     print(f"merged={response2_obj}")
 
-    result2_scored = data_loader.rank3(response2_obj)
+    result2_scored = sorted(response2_obj.items(), key=lambda item: -item[1])
 
-    result2_full = [(r2[0], r2[1], candidate2_map[r2[0]]) for r2 in result2_scored]
+    result2_full = [
+        (r2[0], r2[1], candidate2_map[r2[0]]) for r2 in result2_scored if r2[1] >= 3
+    ]
     return result2_full
 
 
@@ -148,7 +188,7 @@ def predict_3(raw_text, result2_full, candidate3):
                 if t3 in candidate3_map_r:
                     sugguest3.add(t3)
 
-    example3 = {v2: {"B": 3} for v2 in result2_name}
+    example3 = {"B": 1}
     prompt3 = (
         prompt_template.template_prompt3.replace("{raw_text}", raw_text)
         .replace("{example3}", json.dumps(example3, ensure_ascii=False))
@@ -166,17 +206,22 @@ def predict_3(raw_text, result2_full, candidate3):
         response3_gpt = llm_wrapper.chat_complete(prompt3, llm_name=llm_model)
         response3_gpt_obj = json_utils.cvt_str_to_obj(response3_gpt)
         print(f"{llm_model}={response3_gpt_obj}")
-        
-        response3_gpt_obj2 = revise_dict3(
-            response3_gpt_obj, candidate3_map, candidate3_map_r
-        )
-        response3_obj = dict_utils.merge_dict_3(response3_obj, response3_gpt_obj2)
 
-    result3_scored = data_loader.rank3(response3_obj)
+        for k in response3_gpt_obj:
+            if response3_gpt_obj[k] < 1:
+                continue
+            if response3_gpt_obj[k] > 3:
+                response3_gpt_obj[k] = 3
+            if k not in response3_obj:
+                response3_obj[k] = 0
+            response3_obj[k] += response3_gpt_obj[k]
+
+    result3_scored = sorted(response3_obj.items(), key=lambda item: -item[1])
+
     result3_full = [
         (r3[0], r3[1], candidate3_map[r3[0]])
         for r3 in result3_scored
-        if r3[0] in candidate3_map
+        if r3[0] in candidate3_map and r3[1] >= 3
     ]
     return result3_full
 
@@ -234,6 +279,7 @@ def predict(fn, fn_dst=None, i_from=0, i_to=sys.maxsize):
                 raw_text,
                 entity_list=entity_list if entity_list else ["大便干"],
             )
+            # return
 
             # 2 病机 [(A,2,肾阴虚)]
             result2_full = predict_2(
@@ -294,24 +340,18 @@ if __name__ == "__main__":
     if not os.path.exists(dst_folder):
         os.makedirs(dst_folder)
 
-    # predict(
-    #     f"{data_path}/round2_A榜_data/A榜.json",
-    #     # fn_dst="./temp/NE_A_41.txt",
-    #     i_from=0,
-    #     i_to=1,
-    # )
-
-    predict(
-        f"{data_path}/round3_B榜_data.zip/B榜.json",
-        fn_dst="./temp/NE_B_41.txt",
-        # i_from=0,
-        # i_to=1,
-    )
-
     # test_only = True
     # predict(
-    #     f"{data_path}/round1_traning_data/train.json",
-    #     fn_dst="./temp/NE_train_41.txt",
-    #     i_from=196,
-    #     i_to=197,
+    #     f"{data_path}/round2_A榜_data/A榜.json",
+    #     # fn_dst="./temp/NE_A_42s.txt",
+    #     i_from=7,
+    #     i_to=8,
     # )
+
+    test_only = True
+    predict(
+        f"{data_path}/round1_traning_data/train.json",
+        fn_dst="./temp/NE_train_42s.txt",
+        i_from=195,
+        i_to=196,
+    )

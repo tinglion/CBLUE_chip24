@@ -1,0 +1,65 @@
+{
+    "patient": "袁某",
+    "age": 12,
+    "gender": "男",
+    "diagnosis_date": "1975年11月6日",
+    "chief_complaints_and_history": "白喉并发中毒性心肌炎",
+    "symptoms": [
+        "精神委靡",
+        "心跳缓慢",
+        "心律不齐",
+        "面色灰白",
+        "呼吸气短",
+        "心悸胸闷",
+        "神疲乏力",
+        "自汗不止",
+        "睡眠不安",
+        "口咽干燥",
+        "胃纳呆滞",
+        "舌质红少苔",
+        "脉细弱并见结代"
+    ],
+    "differential_diagnosis": {
+        "A": {
+            "description": "外感疫毒入里",
+            "score": 0.3
+        },
+        "B": {
+            "description": "脾胃亏损",
+            "score": 0.4
+        },
+        "C": {
+            "description": "痰湿阻滞",
+            "score": 0.2
+        },
+        "D": {
+            "description": "肺阴亦不足",
+            "score": 0.3
+        },
+        "E": {
+            "description": "肝阴耗损",
+            "score": 0.2
+        },
+        "F": {
+            "description": "出入升降之机停废",
+            "score": 0.1
+        },
+        "G": {
+            "description": "胃失和降",
+            "score": 0.2
+        },
+        "H": {
+            "description": "腐秽留滞",
+            "score": 0.1
+        },
+        "I": {
+            "description": "内陷心包",
+            "score": 0.3
+        },
+        "J": {
+            "description": "耗损心气和心阴",
+            "score": 0.8
+        }
+    },
+    "main_diagnosis": "J: 耗损心气和心阴"
+}

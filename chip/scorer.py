@@ -43,14 +43,12 @@ def doit(ground_truth, fn_predict, i_from=0, i_to=sys.maxsize):
     s_3_list = []
     s_4_list = []
     for i, r in enumerate(presult):
+        if i + i_from > i_to:
+            break
+
         parts = r.split("@")
         r_gt = gt[i + i_from]
         print(i, parts[0], r_gt["案例编号"])
-
-        # if i < i_from:
-        #     continue
-        # if i >= i_to:
-        #     break
 
         # 1
         p_1 = parts[1].split(";")
@@ -109,7 +107,9 @@ def doit(ground_truth, fn_predict, i_from=0, i_to=sys.maxsize):
 if __name__ == "__main__":
     doit(
         ground_truth=f"{data_path}/round1_traning_data/train.json",
-        fn_predict=f"./temp/NE_train_41.txt",
+        # fn_predict=f"./temp/NE_train_41.txt",
+        # fn_predict=f"./temp/NE_train_43.txt",
+        fn_predict=f"./temp/NE_train_44_180_190.txt",
         i_from=180,
-        # i_to=200,
+        i_to=190,
     )
